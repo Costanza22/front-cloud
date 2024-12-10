@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3  # Atualizar para a versão mais recente
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -24,7 +24,7 @@ jobs:
       - name: Run tests and collect coverage
         run: yarn test --coverage
 
-      - name: List coverage directory  # Verificar o conteúdo do diretório de cobertura
+      - name: List coverage directory
         run: ls -R coverage
 
       - name: SonarQube Scan
@@ -33,4 +33,4 @@ jobs:
           sonar-project-key: "Costanza22_front-cloud"
           sonar-host-url: "https://sonarcloud.io"
           sonar-login: ${{ secrets.SONAR_TOKEN }}
-          sonar.javascript.lcov.reportPaths: "coverage/lcov-report/lcov-report.json"
+          sonar.javascript.lcov.reportPaths: "coverage/**/*.json"  # Tente um caminho mais flexível
