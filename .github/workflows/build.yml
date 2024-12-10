@@ -31,7 +31,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v4
         with:
           projectKey: Costanza22_front-cloud
-          sonar.organization: "Costanza22"
+          sonar.organization: "Costanza22"  # Certifique-se de que esse nome é o correto da sua organização
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
