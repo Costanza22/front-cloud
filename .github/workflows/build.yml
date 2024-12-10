@@ -3,36 +3,35 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
   sonarqube:
     name: SonarQube
-    runs-on: ubuntu-latest
-
+    runs-on: windows-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3  # Atualizar para a versão mais recente
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
+      # Passo para instalar dependências
       - name: Install dependencies
-        run: yarn install
+        run: |
+          npm install  # ou 'yarn install', dependendo do gerenciador que você usa
 
-      - name: Run tests and collect coverage
-        run: yarn test --coverage
+      # Passo para rodar os testes e gerar cobertura
+      - name: Run tests with coverage
+        run: |
+          npm test -- --coverage  # ou 'yarn test --coverage', dependendo do gerenciador que você usa
 
-      - name: List coverage directory  # Verificar o conteúdo do diretório de cobertura
-        run: ls -R coverage
-
+      # Passo para rodar o SonarQube Scan
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
         with:
-          sonar-project-key: "Costanza22_front-cloud"
-          sonar-host-url: "https://sonarcloud.io"
-          sonar-login: ${{ secrets.SONAR_TOKEN }}
-          sonar.organization: "Costanza22"  # Definido corretamente aqui
-          sonar.javascript.lcov.reportPaths: "coverage/lcov-report/lcov-report.json"  # Caminho correto do arquivo lcov
-
+          projectKey: Costanza22_front-cloud
+          sonar.organization: "Costanza22"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  
