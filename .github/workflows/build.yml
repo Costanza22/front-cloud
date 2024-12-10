@@ -1,23 +1,33 @@
 name: Build
+
 on:
- push:
-   branches:
-     - master
- pull_request:
-   types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+
 jobs:
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
+
       - name: Install dependencies
-        run: yarn
-      - name: Test and coverage
-        run: yarn jest --coverage
+        run: yarn install
+
+      - name: Run tests and collect coverage
+        run: yarn test --coverage
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v4
-        env:
-          SONAR_TOKEN: ${{ secrets. SONARCLOUD_TOKEN }}
+        with:
+          sonar-project-key: "Costanza22_front-cloud"  # Chave do projeto no SonarCloud
+          sonar-host-url: "https://sonarcloud.io"   # URL do SonarCloud
+          sonar-login: ${{ secrets.SONAR_TOKEN }}    # Token do SonarCloud
+          sonar.javascript.lcov.reportPaths: "coverage/lcov-report/lcov-report.json"  # Caminho para o relatório de cobertura
