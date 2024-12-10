@@ -1,4 +1,4 @@
-import React, { act } from 'react'; // Agora 'act' é importado de 'react'
+import React, { act } from 'react'; 
 import { render, screen, fireEvent } from '@testing-library/react';
 import CasaraoFormPage from './CasaraoFormPage';
 
