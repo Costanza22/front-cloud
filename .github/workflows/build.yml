@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarqube:
+    name: SonarQube
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      # Passo para instalar dependências
+      - name: Install dependencies
+        run: |
+          npm install  # ou 'yarn install', dependendo do gerenciador que você usa
+
+      # Passo para rodar os testes e gerar cobertura
+      - name: Run tests with coverage
+        run: |
+          npm test -- --coverage  # ou 'yarn test --coverage', dependendo do gerenciador que você usa
+
+      # Passo para rodar o SonarQube Scan
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        with:
+          projectKey: Costanza22_front-cloud
+          sonar.organization: "Costanza22"  # Certifique-se de que esse nome é o correto da sua organização
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
