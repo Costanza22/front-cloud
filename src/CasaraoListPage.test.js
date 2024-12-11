@@ -1,62 +1,96 @@
-import React, { act } from 'react'; 
-import { render, screen, fireEvent } from '@testing-library/react';
-import CasaraoFormPage from './CasaraoFormPage';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import CasaraoListPage from './CasaraoListPage';
 
-describe('CasaraoFormPage', () => {
-  const mockOnSubmit = jest.fn();
+describe('CasaraoListPage', () => {
+  const mockCasaroes = [
+    {
+      id: 1,
+      name: 'Casarão Histórico',
+      description: 'Descrição do casarão',
+      location: 'Rua Teste, 123',
+      date: '2024-01-01',
+      image_path: 'base64string'
+    }
+  ];
 
-  it('renders the form fields correctly', () => {
-    render(<CasaraoFormPage onSubmit={mockOnSubmit} />);
+  beforeEach(() => {
+    // Mock do localStorage
+    const mockLocalStorage = {
+      getItem: jest.fn(),
+      setItem: jest.fn(),
+    };
+    Object.defineProperty(window, 'localStorage', {
+      value: mockLocalStorage
+    });
 
-    // Verifica se os campos do formulário estão presentes
-    expect(screen.getByPlaceholderText('Nome do Casarão')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Descrição do Casarão')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Endereço do Casarão')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('CEP')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Data de Construção')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Cadastrar/i })).toBeInTheDocument();
+    // Mock do fetch
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockCasaroes),
+      })
+    );
   });
 
-  it('calls onSubmit with form data when the form is submitted', () => {
-    render(<CasaraoFormPage onSubmit={mockOnSubmit} />);
+  it('deve renderizar o título corretamente', () => {
+    render(<CasaraoListPage />);
+    expect(screen.getByText('Lista de Casarões')).toBeInTheDocument();
+  });
 
-    // Preenche os campos do formulário
-    fireEvent.change(screen.getByPlaceholderText('Nome do Casarão'), {
-      target: { value: 'Casarão Teste' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Descrição do Casarão'), {
-      target: { value: 'Descrição de teste' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Endereço do Casarão'), {
-      target: { value: 'Rua Teste, 123, Bairro Teste' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('CEP'), {
-      target: { value: '12345678' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Data de Construção'), {
-      target: { value: '2024-01-01' },
+  it('deve mostrar/esconder a lista ao clicar no botão consultar', async () => {
+    render(<CasaraoListPage />);
+    
+    const consultarButton = screen.getByText('Consultar Casarões');
+    fireEvent.click(consultarButton);
+    
+    await waitFor(() => {
+      expect(screen.getByText('Casarão Histórico')).toBeInTheDocument();
     });
 
-    // Simula o envio do formulário
-    fireEvent.click(screen.getByRole('button', { name: /Cadastrar/i }));
+    fireEvent.click(consultarButton);
+    expect(screen.queryByText('Casarão Histórico')).not.toBeInTheDocument();
+  });
 
-    // Verifica se o onSubmit foi chamado com os dados corretos
-    expect(mockOnSubmit).toHaveBeenCalledWith({
-      formData: {
-        name: 'Casarão Teste',
-        description: 'Descrição de teste',
-        location: 'Rua Teste, 123, Bairro Teste',
-        cep: '12345678',
-        date: '2024-01-01',
-      },
-      base64: '',
+  it('deve mostrar botão de cadastro quando usuário é admin', () => {
+    render(<CasaraoListPage isAdmin={true} />);
+    expect(screen.getByText('Cadastrar Novo Casarão')).toBeInTheDocument();
+  });
+
+  it('não deve mostrar botão de cadastro quando usuário não é admin', () => {
+    render(<CasaraoListPage isAdmin={false} />);
+    expect(screen.queryByText('Cadastrar Novo Casarão')).not.toBeInTheDocument();
+  });
+
+  it('deve permitir favoritar um casarão para usuários não-admin', async () => {
+    render(<CasaraoListPage isAdmin={false} />);
+    
+    fireEvent.click(screen.getByText('Consultar Casarões'));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Casarão Histórico')).toBeInTheDocument();
     });
 
-    // Verifica se o formulário foi resetado
-    expect(screen.getByPlaceholderText('Nome do Casarão')).toHaveValue('');
-    expect(screen.getByPlaceholderText('Descrição do Casarão')).toHaveValue('');
-    expect(screen.getByPlaceholderText('Endereço do Casarão')).toHaveValue('');
-    expect(screen.getByPlaceholderText('CEP')).toHaveValue('');
-    expect(screen.getByPlaceholderText('Data de Construção')).toHaveValue('');
+    const favoritoButton = screen.getByTitle('Adicionar aos favoritos');
+    fireEvent.click(favoritoButton);
+
+    expect(localStorage.setItem).toHaveBeenCalled();
+  });
+
+  it('deve exibir mensagem quando não houver casarões', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([]),
+      })
+    );
+
+    render(<CasaraoListPage />);
+    
+    fireEvent.click(screen.getByText('Consultar Casarões'));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Nenhum casarão cadastrado.')).toBeInTheDocument();
+    });
   });
 });
